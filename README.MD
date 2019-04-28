@@ -33,6 +33,23 @@ If configuration is proper, a prediction should be shown, such as
 [(0.18657419, 'n02676566 acoustic guitar'), (0.14744462, 'n03929660 pick, plectrum, plectron'), (0.1250492, 'n02787622 banjo'), (0.049499936, 'n03271574 electric fan, blower'), (0.038708802, 'n03476684 hair slide')]
 ```
 
+#### To view the camera preview
+
+Option 1: Connect the Raspberry Pi to a HDMI display
+Option 2: Install a VNC server on the Raspberry Pi
+
+For Option 2, a display manager is required for the VNC server. lxsession is one of the lightweight display manager.
+
+Steps:
+1. `sudo apt-get install realvnc-vnc-server realvnc-vnc-viewer lxsession`
+2. `sudo raspi-config`, goes to `Interfacing Options`->`VNC`->`Yes`
+
+However, PiCamera display the image in native renderer, therefore, `direct capture mode` of the RealVNC need to be enabled in order to view the image over VNC
+
+1. From the VNC windows, click on the VNC Connect icon at the lower right
+2. From the top right of the VNC Connect windows, click on the expanded menu -> options
+3. In the `Troubleshooting`, check on the `Enable direct capture mode`
+
 ### To run in GreenGrass
 
 1. Create a Lambda function and upload this repository as a zip file
