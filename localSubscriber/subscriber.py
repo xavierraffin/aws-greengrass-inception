@@ -49,15 +49,17 @@ def configureLogger():
     logger.addHandler(streamHandler)
 
 def getIotCoreEndpoint():
-    global iotEndpoint
+    global endpoint
+    logger.info("Endpoint not defined, attempt to get from AWS PROFILE")
     client = boto3.client('iot',region_name='us-west-2')
-    iotEndpoint = client.describe_endpoint(
+    endpoint = client.describe_endpoint(
         endpointType='iot:Data-ATS'
     ).get("endpointAddress")
 
 def GreenGrassConnect():
+    logger.debug("connecting to {}", endpoint)
     discoveryInfoProvider = DiscoveryInfoProvider()
-    discoveryInfoProvider.configureEndpoint(iotEndpoint)
+    discoveryInfoProvider.configureEndpoint(endpoint)
     discoveryInfoProvider.configureCredentials(rootCAPath, certificatePath, privateKeyPath)
     discoveryInfoProvider.configureTimeout(10)  # 10 sec
     try:
@@ -111,11 +113,13 @@ def awsIotClientConnect(iotEndpoint, port, caPath):
     return iotClient
 
 configureLogger()
-getIotCoreEndpoint()
+
+getIotCoreEndpoint() 
+
 GreenGrassConnect()
 
 # uncomment to connect to AWS IoT Core
-# awsIotClientConnect(iotEndpoint, 8883, rootCAPath)
+# awsIotClientConnect(endpoint, 8883, rootCAPath)
 
 while True:
     time.sleep(1)
