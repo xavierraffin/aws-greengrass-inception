@@ -16,7 +16,9 @@ Details on Inception v3 can be found in https://arxiv.org/abs/1512.00567
 
 (Details in https://docs.aws.amazon.com/greengrass/latest/developerguide/ml-console.html#ml-inference-prerequisites)
 
-## Steps
+## Setup of AWS Greengrass Core and Raspberry Pi
+
+If you have a Raspberry Pi running AWS Greengrass core software, skip to [Setup of image classification software](#Setup-of-image-classification-software)
 
 ### Fresh setup of Raspbian on Raspberry Pi
 
@@ -52,6 +54,8 @@ network={
 3. Copy the certificates and config of the Greengrass core into the greengrass folder `$ sudo tar zxvf <uid>-setup.tar.gz -C /greengrass/ && sudo cp ~/AmazonRootCA1.pem /greengrass/certs/`
 4. Making sure the resources are in the correct folders, e.g. `$ ls /greengrass/certs/` and you should see your cert, private key, public key and Amazon CA certs in the folder
 5. Starts the Greengrass software `$ sudo /greengrass/ggc/core/greengrassd start` 
+
+## Setup of image classification software
 
 ### To run in Rapsberry Pi
 
@@ -98,7 +102,11 @@ However, PiCamera display the image in native renderer, therefore, `direct captu
 New Prediction: [(0.18657419, 'n02676566 acoustic guitar'), (0.14744462, 'n03929660 pick, plectrum, plectron'), (0.1250492, 'n02787622 banjo'), (0.049499936, 'n03271574 electric fan, blower'), (0.038708802, 'n03476684 hair slide')]
 ```
 
-## Local subscriber
+## GGAD simulation
+
+In this section, we will simulate a local GGAD (Greengrass Aware Devices) that subscribe to the prediction messages from the Lambda running on the GGC, and simulate the local inference when there is no internet connectivity.
+
+### Local subscriber
 
 These steps is to demonstrate the offline capability of ML@Edge of the AWS GreenGrass. You can run the script in the local computer that is in the same network as the Raspberry Pi, to simulate a local device that connects to the GreenGrass core locally.
 
