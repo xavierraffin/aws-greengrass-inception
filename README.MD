@@ -18,6 +18,41 @@ Details on Inception v3 can be found in https://arxiv.org/abs/1512.00567
 
 ## Steps
 
+### Fresh setup of Raspbian on Raspberry Pi
+
+1. Install the Raspbian on the Raspberry Pi with the steps in https://www.raspberrypi.org/documentation/installation/installing-images/README.md
+2. Create a plain text file `wpa_supplicant.conf` in the root of the sd card with contents
+
+```
+ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev
+update_config=1
+country=«your_ISO-3166-1_two-letter_country_code, e.g. CA»
+
+network={
+    ssid="«your_SSID»"
+    psk="«your_PSK»"
+    key_mgmt=WPA-PSK
+}
+```
+3. Insert the sdcard into the Raspberry Pi and boot up, and ssh into the Raspberry Pi
+
+### Setting up Greengrass group and core
+1. Goto https://console.aws.amazon.com/iot/home?#/greengrass/grouphub
+2. Select `Create Group`
+3. Select `Use easy creation`
+4. Enter a Group Name, such as `local_image-greengrass-group`, and select `Next`
+5. In the next page, accept the default core name `local_image-greengrass-group_Core`, and select `Next`
+6. In the screen `Run a scripted easy Group creation`, select `Create Group and Core`
+7. In the screen `Connect your Core device`, download all the resources as tar.gz, and download the root CA `RSA 2048 bit key: Amazon Root CA 1`
+8. We will be installing the Greengrass Core software using Snap so we can skip that step and choose `Finish`
+
+### Setting up Greengrass software on the Raspberry Pi
+1. From your local computer, copy the resources downloaded in [Setting up Greengrass group and core](#Setting-up-Greengrass-group-and-core) to the Raspberry Pi, e.g. `$ scp <uid>-setup.tar.gz pi@<raspberry pi>:~/` and `$ scp AmazonRootCA1.pem pi@<raspberry pi>:~/`
+2. SSH into the Raspberry Pi, install AWS Greengrass software with snap `$ sudo snap install aws-iot-greengrass`
+3. Copy the certificates and config of the Greengrass core into the greengrass folder `$ sudo tar zxvf <uid>-setup.tar.gz -C /greengrass/ && sudo cp ~/AmazonRootCA1.pem /greengrass/certs/`
+4. Making sure the resources are in the correct folders, e.g. `$ ls /greengrass/certs/` and you should see your cert, private key, public key and Amazon CA certs in the folder
+5. Starts the Greengrass software `$ sudo /greengrass/ggc/core/greengrassd start` 
+
 ### To run in Rapsberry Pi
 
 * Git clone or download this repository to the Raspberry Pi
