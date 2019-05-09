@@ -91,12 +91,61 @@ However, PiCamera display the image in native renderer, therefore, `direct captu
 
 ### To run in GreenGrass
 
-1. Create a Lambda function and upload this repository as a zip file
-2. Create a version and alias pointing to the version
-4. Create the Local and Machine Learning resources
-5. Add the Lambda to the GreenGrass group and associate the resources to the lambda
-6. Deploy
-7. If all configuration is correct, an MQTT message with topic "hello/world' should be seen in the AWS IoT Test client, such as 
+#### Lambda function
+
+Create a Lambda function and upload this repository as a zip file
+
+1. Goto https://console.aws.amazon.com/lambda/home
+2. Function name: `greengrassImageClassification`
+3. Lambda Handler: `greengrass_main.function_handler`
+4. Runtime: `Python 2.7`
+5. If you would like the Lambda function to write the logs to CloudWatch logs, add the IAM role with CloudWatch logs permission
+6. Create a version and alias pointing to the version
+
+Local Resource for AWS GreenGrass
+1. Goto https://console.aws.amazon.com/iot/home?#/greengrass/grouphub
+2. Choose the relevant GreenGrass group 
+3. From the menu in the left hand side, select `Resources`
+4. In the Local, select `Add Local`
+5. Create a local resource with the following parameters:
+  - Resource name: videoCoreSharedMemory
+  - Resource type: Device
+  - Device path: /dev/vcsm
+  - Group owner file access permission: Automatically add OS group permissions of the Linux group that owns the resource
+  - Lambda function affiliations: greengrassObjectClassification
+  - Specify the permission this Lambda will have to the resource.: Read and write access
+6. Create another local resource with the following parameters:
+  - Resource name: videoCoreInterface
+  - Resource type: Device
+  - Device path: /dev/vchiq
+  - Group owner file access permission: Automatically add OS group permissions of the Linux group that owns the resource
+  - Lambda function affiliations: greengrassObjectClassification
+  - Specify the permission this Lambda will have to the resource.: Read and write access
+
+Machine Learning Resource
+1. In your local computer, download http://data.mxnet.io/models/imagenet/inception-bn/Inception-BN-symbol.json and http://data.mxnet.io/mxnet/models/imagenet/synset.txt
+2. Download http://data.mxnet.io/models/imagenet/inception-bn/Inception-BN-0126.params and rename to Inception-BN-0000.params
+3. zip these 3 files as `inception_bn.zip`
+1. Goto https://console.aws.amazon.com/iot/home?#/greengrass/grouphub
+2. Choose the relevant GreenGrass group 
+3. From the menu in the left hand side, select `Resources`
+4. In the Local, select `Add Machine Learning`
+5. Select `Add machine learning resource`
+6. Create a machine learning resource with the following parameters:
+  - Resource name: Inception
+  - Model source: Upload a model in S3 (including models optimized through Deep Learning Compiler)
+  - Model from S3: (Upload the  inception_bn.zip)
+  - Local path: /greengrass-machine-learning/mxnet/inception_bn
+  - Lambda function affiliations:greengrassObjectClassification
+  - Specify the permission this Lambda will have to the resource.: Read and write access 
+
+Deploy the GreenGrass configuration to the Raspberry Pi
+1. Goto https://console.aws.amazon.com/iot/home?#/greengrass/grouphub
+2. Add the Lambda to the GreenGrass group and associate the resources to the lambda
+3. From the `Actions` drop down list, select `Deploy`
+4. Goto https://console.aws.amazon.com/iot/home?#/test
+5. Subscribe to "hello/world'
+6. If all configuration is correct, an MQTT message with topic "hello/world' should be seen in the AWS IoT Test client, such as 
 
 ```
 New Prediction: [(0.18657419, 'n02676566 acoustic guitar'), (0.14744462, 'n03929660 pick, plectrum, plectron'), (0.1250492, 'n02787622 banjo'), (0.049499936, 'n03271574 electric fan, blower'), (0.038708802, 'n03476684 hair slide')]
