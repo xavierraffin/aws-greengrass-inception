@@ -12,19 +12,12 @@ Details on Inception v3 can be found in https://arxiv.org/abs/1512.00567
 
 * Raspberry Pi 3 Model B+ set up and configured for use with AWS IoT Greengrass
 * Raspberry Pi Camera Module V2 - 8 Megapixel, 1080p
-* A Greengrass group and a Greengrass core
 
 (Details in https://docs.aws.amazon.com/greengrass/latest/developerguide/ml-console.html#ml-inference-prerequisites)
 
-## Setup of AWS Greengrass Core and Raspberry Pi
+## Configure Raspberry Pi with the WiFi credential
 
-If you have a Raspberry Pi running AWS Greengrass core software, skip to [Setup of image classification software](#Setup-of-image-classification-software)
-
-### Fresh setup of Raspbian on Raspberry Pi
-
-1. Install the Raspbian on the Raspberry Pi with the steps in https://www.raspberrypi.org/documentation/installation/installing-images/README.md
-2. Create a plain text file `wpa_supplicant.conf` in the root of the sd card with contents
-
+1. Create a plain text file `wpa_supplicant.conf` in the root of the sd card with contents
 ```
 ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev
 update_config=1
@@ -36,7 +29,8 @@ network={
     key_mgmt=WPA-PSK
 }
 ```
-3. Insert the sdcard into the Raspberry Pi and boot up, and ssh into the Raspberry Pi
+
+## Setup of Greengrass
 
 ### Setting up Greengrass group and core
 1. Goto https://console.aws.amazon.com/iot/home?#/greengrass/grouphub
@@ -45,15 +39,40 @@ network={
 4. Enter a Group Name, such as `local_image-greengrass-group`, and select `Next`
 5. In the next page, accept the default core name `local_image-greengrass-group_Core`, and select `Next`
 6. In the screen `Run a scripted easy Group creation`, select `Create Group and Core`
-7. In the screen `Connect your Core device`, download all the resources as tar.gz, and download the root CA `RSA 2048 bit key: Amazon Root CA 1`
-8. We will be installing the Greengrass Core software using Snap so we can skip that step and choose `Finish`
+7. In the screen `Connect your Core device`, choose `Download these resources as a tar.gz`
+8. Choose `Choose a root CA`,  download the root CA `RSA 2048 bit key: Amazon Root CA 1`
+9. We will be installing the Greengrass Core software using Snap so we can skip that step and choose `Finish`
 
-### Setting up Greengrass software on the Raspberry Pi
+### Setting Raspberry Pi
 1. From your local computer, copy the resources downloaded in [Setting up Greengrass group and core](#Setting-up-Greengrass-group-and-core) to the Raspberry Pi, e.g. `$ scp <uid>-setup.tar.gz pi@<raspberry pi>:~/` and `$ scp AmazonRootCA1.pem pi@<raspberry pi>:~/`
-2. SSH into the Raspberry Pi, install AWS Greengrass software with snap `$ sudo snap install aws-iot-greengrass`
-3. Copy the certificates and config of the Greengrass core into the greengrass folder `$ sudo tar zxvf <uid>-setup.tar.gz -C /greengrass/ && sudo cp ~/AmazonRootCA1.pem /greengrass/certs/`
-4. Making sure the resources are in the correct folders, e.g. `$ ls /greengrass/certs/` and you should see your cert, private key, public key and Amazon CA certs in the folder
-5. Starts the Greengrass software `$ sudo /greengrass/ggc/core/greengrassd start` 
+2. SSH into the Raspberry Pi, follow the steps in https://docs.aws.amazon.com/greengrass/latest/developerguide/module1.html#setup-filter.rpi to prepare the Raspberry Pi for GreenGrass
+3. Follow the steps in https://docs.aws.amazon.com/greengrass/latest/developerguide/what-is-gg.html#gg-downloads to install the GreenGrass core software
+12. Copy the certificates and config of the Greengrass core into the greengrass folder `$ sudo tar zxvf <uid>-setup.tar.gz -C /greengrass/ && sudo cp ~/AmazonRootCA1.pem /greengrass/certs/root.ca.pem`
+13. Making sure the resources are in the correct folders, e.g. `$ ls /greengrass/certs/` and you should see your cert, private key, public key and Amazon CA certs in the folder
+14. Starts the Greengrass software `$ sudo /greengrass/ggc/core/greengrassd start` 
+15. If the configuration is in place, you should see the GreenGrass core running message, such as
+```
+$ sudo /greengrass/ggc/core/greengrassd start
+Setting up greengrass daemon
+Validating hardlink/softlink protection
+Waiting for up to 1m10s for Daemon to start
+
+Greengrass successfully started with PID: <PID>
+```
+16. You should also be able to see that the GreenGrass Core software successfully subscribed to the GreenGrass MQTT Topics
+```
+$ sudo tail /greengrass/ggc/var/log/system/runtime.log 
+[2019-05-10T11:01:02.078-07:00][DEBUG]-Entering OnConnect.	{"clientId": "local_image-greengrass-group_Core"}
+[2019-05-10T11:01:02.078-07:00][INFO]-MQTT connection connected. Start subscribing.	{"clientId": "local_image-greengrass-group_Core"}
+[2019-05-10T11:01:02.078-07:00][INFO]-Deployment agent connected to cloud.
+[2019-05-10T11:01:02.078-07:00][DEBUG]-Subscribe retry configuration.	{"IntervalInSeconds": 60}
+[2019-05-10T11:01:02.078-07:00][INFO]-Start subscribing.	{"numOfTopics": 2, "clientId": "local_image-greengrass-group_Core"}
+[2019-05-10T11:01:02.079-07:00][INFO]-Trying to subscribe to topic $aws/things/local_image-greengrass-group_Core-gda/shadow/update/delta
+[2019-05-10T11:01:02.194-07:00][DEBUG]-Subscribed to topic.	{"topic": "$aws/things/local_image-greengrass-group_Core-gda/shadow/update/delta"}
+[2019-05-10T11:01:02.194-07:00][INFO]-Trying to subscribe to topic $aws/things/local_image-greengrass-group_Core-gda/shadow/get/accepted
+[2019-05-10T11:01:02.309-07:00][DEBUG]-Subscribed to topic.	{"topic": "$aws/things/local_image-greengrass-group_Core-gda/shadow/get/accepted"}
+[2019-05-10T11:01:02.417-07:00][INFO]-All topics subscribed.	{"clientId": "local_image-greengrass-group_Core"}
+```
 
 ## Setup of image classification software
 
@@ -102,7 +121,8 @@ Create a Lambda function and upload this repository as a zip file
 5. If you would like the Lambda function to write the logs to CloudWatch logs, add the IAM role with CloudWatch logs permission
 6. Create a version and alias pointing to the version
 
-Local Resource for AWS GreenGrass
+#### Local Resources
+
 1. Goto https://console.aws.amazon.com/iot/home?#/greengrass/grouphub
 2. Choose the relevant GreenGrass group 
 3. From the menu in the left hand side, select `Resources`
@@ -122,7 +142,8 @@ Local Resource for AWS GreenGrass
   - Lambda function affiliations: greengrassObjectClassification
   - Specify the permission this Lambda will have to the resource.: Read and write access
 
-Machine Learning Resource
+#### Machine Learning Resource
+
 1. In your local computer, download http://data.mxnet.io/models/imagenet/inception-bn/Inception-BN-symbol.json and http://data.mxnet.io/mxnet/models/imagenet/synset.txt
 2. Download http://data.mxnet.io/models/imagenet/inception-bn/Inception-BN-0126.params and rename to Inception-BN-0000.params
 3. zip these 3 files as `inception_bn.zip`
@@ -139,7 +160,8 @@ Machine Learning Resource
   - Lambda function affiliations:greengrassObjectClassification
   - Specify the permission this Lambda will have to the resource.: Read and write access 
 
-Deploy the GreenGrass configuration to the Raspberry Pi
+#### Deploy the GreenGrass configuration to the Raspberry Pi
+
 1. Goto https://console.aws.amazon.com/iot/home?#/greengrass/grouphub
 2. Add the Lambda to the GreenGrass group and associate the resources to the lambda
 3. From the `Actions` drop down list, select `Deploy`
@@ -258,3 +280,16 @@ from topic:
 hello/world
 --------------
 ```
+
+## Troubleshooting
+
+### GreenGrass core cannot be started
+
+```
+# sudo snap install aws-iot-greengrass
+error: cannot perform the following tasks:
+- Start snap "aws-iot-greengrass" (3) services ([start snap.aws-iot-greengrass.greengrassd.service] failed with exit status 1: Job for snap.aws-iot-greengrass.greengrassd.service failed because the control process exited with error code.
+See "systemctl status snap.aws-iot-greengrass.greengrassd.service" and "journalctl -xe" for details.
+)
+```
+
