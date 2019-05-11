@@ -2,6 +2,7 @@
 
 ML@Edge Image Classifications example using MXNet pretrained model with GreenGrass Core running on a Rasperry Pi
 
+
 ## Description
 
 This is an example of running Lambda on GreenGrass with MXNet pretrained model Inception v3 for image classification
@@ -30,9 +31,9 @@ network={
 }
 ```
 
-## Setup of Greengrass
+## Setup and installation of Greengrass software
 
-### Setting up Greengrass group and core
+### Create a Greengrass group 
 1. Goto https://console.aws.amazon.com/iot/home?#/greengrass/grouphub
 2. Select `Create Group`
 3. Select `Use easy creation`
@@ -43,7 +44,7 @@ network={
 8. Choose `Choose a root CA`,  download the root CA `RSA 2048 bit key: Amazon Root CA 1`
 9. We will be installing the Greengrass Core software using Snap so we can skip that step and choose `Finish`
 
-### Setting Raspberry Pi
+### Setting up GreenGrass on Raspberry Pi
 1. From your local computer, copy the resources downloaded in [Setting up Greengrass group and core](#Setting-up-Greengrass-group-and-core) to the Raspberry Pi, e.g. `$ scp <uid>-setup.tar.gz pi@<raspberry pi>:~/` and `$ scp AmazonRootCA1.pem pi@<raspberry pi>:~/`
 2. SSH into the Raspberry Pi, follow the steps in https://docs.aws.amazon.com/greengrass/latest/developerguide/module1.html#setup-filter.rpi to prepare the Raspberry Pi for GreenGrass
 3. Follow the steps in https://docs.aws.amazon.com/greengrass/latest/developerguide/what-is-gg.html#gg-downloads to install the GreenGrass core software
@@ -76,44 +77,9 @@ $ sudo tail /greengrass/ggc/var/log/system/runtime.log
 
 ## Setup of image classification software
 
-### To run the image classification locally in Rapsberry Pi
+### Adding Lambda functions and resources to the GreenGrass
 
-1. Git clone or download this repository to the Raspberry Pi
-2. Install the python 2.7 dependencies `sudo apt-get install -y python-dev python-setuptools python-pip python-picamera`
-3. We are still using python 2.7, so we have to install the opencv python library using `sudo apt-get install python-opencv`
-4. Install the MXNet Dependencies following the steps in https://docs.aws.amazon.com/greengrass/latest/developerguide/ml-console.html#install-mxnet#install-mxnet
-2. Runs the local main python file
-
-```
-$ python2.7 local_main.py
-```
-
-If configuration is proper, a prediction should be shown, such as
-
-```
-[(0.18657419, 'n02676566 acoustic guitar'), (0.14744462, 'n03929660 pick, plectrum, plectron'), (0.1250492, 'n02787622 banjo'), (0.049499936, 'n03271574 electric fan, blower'), (0.038708802, 'n03476684 hair slide')]
-```
-
-#### To view the camera preview
-
-* Option 1: Connect the Raspberry Pi to a HDMI display
-* Option 2: Install a VNC server on the Raspberry Pi
-
-For Option 2, a display manager is required for the VNC server. lxsession is one of the lightweight display manager.
-
-Steps:
-1. `sudo apt-get install realvnc-vnc-server realvnc-vnc-viewer lxsession`
-2. `sudo raspi-config`, goes to `Interfacing Options`->`VNC`->`Yes`
-
-However, PiCamera display the image in native renderer, therefore, `direct capture mode` of the RealVNC need to be enabled in order to view the image over VNC
-
-1. From the VNC windows, click on the VNC Connect icon at the lower right
-2. From the top right of the VNC Connect windows, click on the expanded menu -> options
-3. In the `Troubleshooting`, check on the `Enable direct capture mode`
-
-### To run in GreenGrass
-
-#### Lambda function
+#### Create the long-running Lambda function
 
 Create a Lambda function and upload this repository as a zip file
 
@@ -125,13 +91,13 @@ Create a Lambda function and upload this repository as a zip file
 5. Role name: `greenGrassLambdaRole`
 5. Choose `Basic Lambda@Edge permissions` from the Policy templates
 6. Choose `Create function`
-7. In the Function code, upload the zip file of this repository
-3. Lambda Handler: `greengrass_main.function_handler`
-7. Choose `Save`
-8. From the `Actions`, choose `Publish new version`
-8. From the `Version: 1`, choose `1` in the `Versions`
-8. From the `Actions`, choose `Create alias`
-8. Enter a name for the version alias, such as `mlRpi`, and choose `1` in the Version
+7. In the Function code, upload this repository as a zip file. You need these 2 files `greengrass_main.py`, `load_model.py` and the folder `greengrasssdk/` in the zip file
+8. Lambda Handler: `greengrass_main.function_handler`
+9. Choose `Save`
+10. From the `Actions`, choose `Publish new version`
+11. From the `Version: 1`, choose `1` in the `Versions`
+12. From the `Actions`, choose `Create alias`
+13. Enter a name for the version alias, such as `mlRpi`, and choose `1` in the Version
 
 #### Associate the Lambda to GreenGrass group
 1. Goto https://console.aws.amazon.com/iot/home?#/greengrass/grouphub
@@ -152,7 +118,7 @@ Create a Lambda function and upload this repository as a zip file
   * Environment variables
      * MXNET_ENGINE_TYPE: NaiveEngine
 
-#### Local Resources
+#### PiCamera device as Local Resources
 
 1. Goto https://console.aws.amazon.com/iot/home?#/greengrass/grouphub
 2. Choose the relevant GreenGrass group 
@@ -205,7 +171,7 @@ Create a Lambda function and upload this repository as a zip file
   1. In `Grant permission to access other services`, choose `Grant permission`
 4. You can monitor the logs locally `sudo tail -F /greengrass/ggc/var/log/system/runtime.log`
 
-### Receive the prediction message from the AWS IoT Core MQTT Test client
+### Subscribe to the prediction message using the AWS IoT Core MQTT Test client
 4. Goto https://console.aws.amazon.com/iot/home?#/test
 5. In the `Subscription topic`, enter `hello/world`
 6. If all configuration is correct, an MQTT message with topic "hello/world' should be seen in the AWS IoT Test client, such as 
@@ -229,6 +195,42 @@ If successfully updated, you should see the response
 ```
 
 Now that the alias `mlRpi` is pointing to the version, you can proceed to deploy the GreenGrass
+
+### To run the image classification locally in Rapsberry Pi
+
+1. Git clone or download this repository to the Raspberry Pi
+2. Install the python 2.7 dependencies `sudo apt-get install -y python-dev python-setuptools python-pip python-picamera`
+3. We are still using python 2.7, so we have to install the opencv python library using `sudo apt-get install python-opencv`
+4. Install the MXNet Dependencies following the steps in https://docs.aws.amazon.com/greengrass/latest/developerguide/ml-console.html#install-mxnet#install-mxnet
+2. Runs the local main python file
+
+```
+$ python2.7 local_main.py
+```
+
+If configuration is proper, a prediction should be shown, such as
+
+```
+[(0.18657419, 'n02676566 acoustic guitar'), (0.14744462, 'n03929660 pick, plectrum, plectron'), (0.1250492, 'n02787622 banjo'), (0.049499936, 'n03271574 electric fan, blower'), (0.038708802, 'n03476684 hair slide')]
+```
+
+#### To view the camera preview
+
+* Option 1: Connect the Raspberry Pi to a HDMI display
+* Option 2: Install a VNC server on the Raspberry Pi
+
+For Option 2, a display manager is required for the VNC server. lxsession is one of the lightweight display manager.
+
+Steps:
+1. `sudo apt-get install realvnc-vnc-server realvnc-vnc-viewer lxsession`
+2. `sudo raspi-config`, goes to `Interfacing Options`->`VNC`->`Yes`
+
+However, PiCamera display the image in native renderer, therefore, `direct capture mode` of the RealVNC need to be enabled in order to view the image over VNC
+
+1. From the VNC windows, click on the VNC Connect icon at the lower right
+2. From the top right of the VNC Connect windows, click on the expanded menu -> options
+3. In the `Troubleshooting`, check on the `Enable direct capture mode`
+
 
 ## GGAD simulation
 
