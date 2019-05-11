@@ -76,10 +76,13 @@ $ sudo tail /greengrass/ggc/var/log/system/runtime.log
 
 ## Setup of image classification software
 
-### To run in Rapsberry Pi
+### To run the image classification locally in Rapsberry Pi
 
-* Git clone or download this repository to the Raspberry Pi
-* Runs the local main python file
+1. Git clone or download this repository to the Raspberry Pi
+2. Install the python 2.7 dependencies `sudo apt-get install -y python-dev python-setuptools python-pip python-picamera`
+3. We are still using python 2.7, so we have to install the opencv python library using `sudo apt-get install python-opencv`
+4. Install the MXNet Dependencies following the steps in https://docs.aws.amazon.com/greengrass/latest/developerguide/ml-console.html#install-mxnet#install-mxnet
+2. Runs the local main python file
 
 ```
 $ python2.7 local_main.py
@@ -115,11 +118,39 @@ However, PiCamera display the image in native renderer, therefore, `direct captu
 Create a Lambda function and upload this repository as a zip file
 
 1. Goto https://console.aws.amazon.com/lambda/home
+2. Choose `Author from scratch`
 2. Function name: `greengrassImageClassification`
+3. Runtime: `Python 2.7`
+4. Execution role: Create a new role from AWS policy templates
+5. Role name: `greenGrassLambdaRole`
+5. Choose `Basic Lambda@Edge permissions` from the Policy templates
+6. Choose `Create function`
+7. In the Function code, upload the zip file of this repository
 3. Lambda Handler: `greengrass_main.function_handler`
-4. Runtime: `Python 2.7`
-5. If you would like the Lambda function to write the logs to CloudWatch logs, add the IAM role with CloudWatch logs permission
-6. Create a version and alias pointing to the version
+7. Choose `Save`
+8. From the `Actions`, choose `Publish new version`
+8. From the `Version: 1`, choose `1` in the `Versions`
+8. From the `Actions`, choose `Create alias`
+8. Enter a name for the version alias, such as `mlRpi`, and choose `1` in the Version
+
+#### Associate the Lambda to GreenGrass group
+1. Goto https://console.aws.amazon.com/iot/home?#/greengrass/grouphub
+2. Choose the relevant GreenGrass group 
+3. From the menu in the left hand side, select `Lambdas`, `Add Lambda`
+4. In the `Add a Lambda to your Greengrass Group`, choose `Use existing Lambda`
+5. Choose `greengrassImageClassification`, choose `Next`
+6. In the `Select a Lambda version`, choose the Alias, such as `Alias: mlRpi`
+
+#### Update Lambda function Settings
+1. Goto https://console.aws.amazon.com/iot/home?#/greengrass/grouphub
+2. Choose the relevant GreenGrass group 
+3. From the menu in the left hand side, select `Lambdas`, choose the Lambda `greengrassImageClassification`
+4. Choose `Edit`
+  * Memory limit: 96 MB
+  * Timeout: 15 Seconds
+  * Lambda lifecycle: Make this function long-lived and keep it running indefinitely
+  * Environment variables
+     * MXNET_ENGINE_TYPE: NaiveEngine
 
 #### Local Resources
 
@@ -158,20 +189,46 @@ Create a Lambda function and upload this repository as a zip file
   - Model from S3: (Upload the  inception_bn.zip)
   - Local path: /greengrass-machine-learning/mxnet/inception_bn
   - Lambda function affiliations:greengrassObjectClassification
-  - Specify the permission this Lambda will have to the resource.: Read and write access 
+  - Specify the permission this Lambda will have to the resource.: Read-only access
+
+#### Assume-role for the GreenGrass core
+1. Goto https://console.aws.amazon.com/iot/home?#/greengrass/grouphub
+2. Choose the relevant GreenGrass group 
+3. From the menu in the left hand side, select `Settings`
+4. In the `Group role`, choose `Add role`, choose an IAM role that allows principal `greengrass.amazonaws.com` to assume, such as `Greengrass_ServiceRole`
 
 #### Deploy the GreenGrass configuration to the Raspberry Pi
 
 1. Goto https://console.aws.amazon.com/iot/home?#/greengrass/grouphub
-2. Add the Lambda to the GreenGrass group and associate the resources to the lambda
 3. From the `Actions` drop down list, select `Deploy`
+  4. If this is your first deployment, in `Configure how Devices discover your Core`, choose `Automatic Detection`
+  1. In `Grant permission to access other services`, choose `Grant permission`
+4. You can monitor the logs locally `sudo tail -F /greengrass/ggc/var/log/system/runtime.log`
+
+### Receive the prediction message from the AWS IoT Core MQTT Test client
 4. Goto https://console.aws.amazon.com/iot/home?#/test
-5. Subscribe to "hello/world'
+5. In the `Subscription topic`, enter `hello/world`
 6. If all configuration is correct, an MQTT message with topic "hello/world' should be seen in the AWS IoT Test client, such as 
 
 ```
 New Prediction: [(0.18657419, 'n02676566 acoustic guitar'), (0.14744462, 'n03929660 pick, plectrum, plectron'), (0.1250492, 'n02787622 banjo'), (0.049499936, 'n03271574 electric fan, blower'), (0.038708802, 'n03476684 hair slide')]
 ```
+
+### Deploy new version of Lambda to GreenGrass
+
+Should you need to deploy a new version of Lambda function, you need to update the alias to the version using command `aws lambda update-alias --function-name greengrassImageClassification --name mlRpi --function-version 2`
+
+If successfully updated, you should see the response
+```
+{
+    "FunctionVersion": "2",
+    "AliasArn": "arn:aws:lambda:us-east-1:159000643575:function:greengrassImageClassification:mlRpi",
+    "Name": "mlRpi",
+    "Description": ""
+}
+```
+
+Now that the alias `mlRpi` is pointing to the version, you can proceed to deploy the GreenGrass
 
 ## GGAD simulation
 
@@ -283,13 +340,14 @@ hello/world
 
 ## Troubleshooting
 
-### GreenGrass core cannot be started
-
+* Greengrass Troubleshooting guides https://docs.aws.amazon.com/greengrass/latest/developerguide/gg-troubleshooting.html
+* To check Lambda local execution, the logs can be tailed with command `sudo tail -F /greengrass/ggc/var/log/user/<AWS region>/<account id>/greengrassImageClassification.log`. Successful execution should have a log similar to the following
 ```
-# sudo snap install aws-iot-greengrass
-error: cannot perform the following tasks:
-- Start snap "aws-iot-greengrass" (3) services ([start snap.aws-iot-greengrass.greengrassd.service] failed with exit status 1: Job for snap.aws-iot-greengrass.greengrassd.service failed because the control process exited with error code.
-See "systemctl status snap.aws-iot-greengrass.greengrassd.service" and "journalctl -xe" for details.
-)
+[2019-05-10T19:08:06.401-07:00][INFO]-Lambda.py:92,Invoking Lambda function "arn:aws:lambda:::function:GGRouter" with Greengrass Message "New Prediction: [(0.12387366, 'n04372370 switch, electric switch, electrical switch'), (0.063494414, 'n03929660 pick, plectrum, plectron'), (0.058057442, 'n04254120 soap dispenser'), (0.042390004, 'n04153751 screw'), (0.03408207, 'n15075141 toilet tissue, toilet paper, bathroom tissue')]"
+[2019-05-10T19:08:06.405-07:00][INFO]-ipc_client.py:142,Posting work for function [arn:aws:lambda:::function:GGRouter] to http://localhost:8000/2016-11-01/functions/arn:aws:lambda:::function:GGRouter
+[2019-05-10T19:08:06.723-07:00][INFO]-ipc_client.py:155,Work posted with invocation id [c5467c56-9121-4bd6-6eb6-a937d8d9bdfb]
+[2019-05-10T19:08:06.728-07:00][INFO]-lambda_runtime.py:114,Running [arn:aws:lambda:us-east-1:159000643575:function:greengrassImageClassification:3]
+[2019-05-10T19:08:06.73-07:00][INFO]-ipc_client.py:170,Getting work for function [arn:aws:lambda:us-east-1:159000643575:function:greengrassImageClassification:3] from http://localhost:8000/2016-11-01/functions/arn:aws:lambda:us-east-1:159000643575:function:greengrassImageClassification:3/work
+[2019-05-10T19:08:15.31-07:00][INFO]-[(0.1262314, 'n04372370 switch, electric switch, electrical switch'), (0.06892826, 'n03929660 pick, plectrum, plectron'), (0.05506966, 'n04254120 soap dispenser'), (0.044870526, 'n04153751 screw'), (0.033377603, 'n15075141 toilet tissue, toilet paper, bathroom tissue')]
+[2019-05-10T19:08:15.311-07:00][INFO]-IoTDataPlane.py:115,Publishing message on topic "hello/world" with Payload "New Prediction: [(0.1262314, 'n04372370 switch, electric switch, electrical switch'), (0.06892826, 'n03929660 pick, plectrum, plectron'), (0.05506966, 'n04254120 soap dispenser'), (0.044870526, 'n04153751 screw'), (0.033377603, 'n15075141 toilet tissue, toilet paper, bathroom tissue')]"
 ```
-
