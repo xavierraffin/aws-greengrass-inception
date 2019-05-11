@@ -23,13 +23,13 @@ import sys
 client = greengrasssdk.client('iot-data')
 
 model_path = '/greengrass-machine-learning/mxnet/inception_bn/'
-global_model = load_model.ImagenetModel(model_path + 'synset.txt', model_path + 'Inception_BN')
+global_model = load_model.ImagenetModel(model_path + 'synset.txt', model_path + 'Inception-BN')
 
 def greengrass_hello_world_run():
     if global_model is not None:
         try:
             predictions = global_model.predict_from_cam()
-	    print predictions
+            print predictions
             #publish predictions
             client.publish(topic='hello/world', payload='New Prediction: {}'.format(str(predictions)))
         except:
