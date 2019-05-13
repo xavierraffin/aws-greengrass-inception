@@ -151,7 +151,7 @@ Create a Lambda function and upload this repository as a zip file
 5. Select `Add machine learning resource`
 6. Create a machine learning resource with the following parameters:
   - Resource name: Inception
-  - Model source: Upload a model in S3 (including models optimized through Deep Learning Compiler)
+  - Model source: Upload a model in S3 (including models optimized through Deep Learning Compiler). **Make sure you have the word `greengrass` in your bucket name**
   - Model from S3: (Upload the  inception_bn.zip)
   - Local path: /greengrass-machine-learning/mxnet/inception_bn
   - Lambda function affiliations:greengrassObjectClassification
@@ -162,6 +162,7 @@ Create a Lambda function and upload this repository as a zip file
 2. Choose the relevant GreenGrass group 
 3. From the menu in the left hand side, select `Settings`
 4. In the `Group role`, choose `Add role`, choose an IAM role that allows principal `greengrass.amazonaws.com` to assume, such as `Greengrass_ServiceRole`
+   1. If you are creating a new IAM role for GreenGrass, make sure you have these 2 managed policies to the GreenGrass Service Role: `CloudWatchLogsFullAccess` and `AWSGreengrassResourceAccessRolePolicy`
 
 #### Deploy the GreenGrass configuration to the Raspberry Pi
 
@@ -353,3 +354,6 @@ hello/world
 [2019-05-10T19:08:15.31-07:00][INFO]-[(0.1262314, 'n04372370 switch, electric switch, electrical switch'), (0.06892826, 'n03929660 pick, plectrum, plectron'), (0.05506966, 'n04254120 soap dispenser'), (0.044870526, 'n04153751 screw'), (0.033377603, 'n15075141 toilet tissue, toilet paper, bathroom tissue')]
 [2019-05-10T19:08:15.311-07:00][INFO]-IoTDataPlane.py:115,Publishing message on topic "hello/world" with Payload "New Prediction: [(0.1262314, 'n04372370 switch, electric switch, electrical switch'), (0.06892826, 'n03929660 pick, plectrum, plectron'), (0.05506966, 'n04254120 soap dispenser'), (0.044870526, 'n04153751 screw'), (0.033377603, 'n15075141 toilet tissue, toilet paper, bathroom tissue')]"
 ```
+
+## References
+  * https://github.com/apache/incubator-mxnet/tree/master/example/image-classification
