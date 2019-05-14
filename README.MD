@@ -79,6 +79,8 @@ $ sudo tail /greengrass/ggc/var/log/system/runtime.log
 
 ### Adding Lambda functions and resources to the GreenGrass
 
+1. In the Raspberry Pi, install the MXNet Dependencies following the steps in https://docs.aws.amazon.com/greengrass/latest/developerguide/ml-console.html#install-mxnet#install-mxnet
+
 #### Create the long-running Lambda function
 
 Create a Lambda function and upload this repository as a zip file
@@ -202,7 +204,6 @@ Now that the alias `mlRpi` is pointing to the version, you can proceed to deploy
 1. Git clone or download this repository to the Raspberry Pi
 2. Install the python 2.7 dependencies `sudo apt-get install -y python-dev python-setuptools python-pip python-picamera`
 3. We are still using python 2.7, so we have to install the opencv python library using `sudo apt-get install python-opencv`
-4. Install the MXNet Dependencies following the steps in https://docs.aws.amazon.com/greengrass/latest/developerguide/ml-console.html#install-mxnet#install-mxnet
 2. Runs the local main python file
 
 ```
