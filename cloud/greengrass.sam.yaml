@@ -1,0 +1,18 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >-
+  GreenGrass Image Classification
+Resources:
+  imageFunctions:
+    Type: AWS::Serverless::Application
+    Properties:
+      Location: https://s3.amazonaws.com/cloudformation-stacks-us-east-1/aws-greengrass-mxnet-inception/image-classification-lambda.sam.yaml
+      # Parameters:
+      #   StackName: !Sub ${AWS::StackName}
+  greenGrassMXNetGroup:
+    Type: AWS::Greengrass::Group
+    Properties: 
+      Name: GreenGrassMXNetGroup
+      DependsOn: imageFunctions
+      InitialVersion:
+        FunctionDefinitionVersionArn: !GetAtt imageFunctions.Outputs.FunctionArn
