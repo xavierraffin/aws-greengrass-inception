@@ -6,7 +6,7 @@ Resources:
   imageClassificationLambdaFunction: 
     Type: AWS::Serverless::Function
     Properties: 
-      FunctionName: greengrassObjectClassification
+      FunctionName: !Sub classification-${AWS::StackName}
       Handler: "greengrass_main.function_handler"
       CodeUri: s3://cloudformation-stacks-us-east-1/aws-greengrass-mxnet-inception/aws-greengrass-image-example.zip
       Runtime: "python2.7"

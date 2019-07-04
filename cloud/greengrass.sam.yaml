@@ -3,16 +3,65 @@ Transform: AWS::Serverless-2016-10-31
 Description: >-
   GreenGrass Image Classification
 Resources:
+  videoCoreResourceDefinition:
+    Type: AWS::Greengrass::ResourceDefinition
+    Properties: 
+      Name: videoCoreSharedMemoryResourceDefinition
+      InitialVersion: 
+        Resources: 
+          - Id: videoCoreSharedMemoryId
+            Name: videoCoreSharedMemory
+            ResourceDataContainer: 
+              LocalDeviceResourceData: 
+                GroupOwnerSetting: 
+                  AutoAddGroupOwner: True
+                SourcePath: /dev/vcsm                  
+          - Id: videoCoreInterfaceId
+            Name: videoCoreInterface
+            ResourceDataContainer: 
+              LocalDeviceResourceData: 
+                GroupOwnerSetting: 
+                  AutoAddGroupOwner: True
+                SourcePath: /dev/vchiq                 
   imageFunctions:
     Type: AWS::Serverless::Application
     Properties:
       Location: https://s3.amazonaws.com/cloudformation-stacks-us-east-1/aws-greengrass-mxnet-inception/image-classification-lambda.sam.yaml
       # Parameters:
       #   StackName: !Sub ${AWS::StackName}
+  imageGGFunctionDefinition:
+    Type: AWS::Greengrass::FunctionDefinition
+    Properties: 
+      Name: ImageClassificationFunctionDefinition        
+      InitialVersion: 
+        Functions:
+          - 
+            Id: ImageClassification
+            FunctionArn: !GetAtt imageFunctions.Outputs.FunctionAlias
+            FunctionConfiguration:
+              Pinned: True
+              MemorySize: 96000 #KB
+              Timeout: 15 #seconds
+              EncodingType: json
+              Environment:
+                AccessSysfs: True
+                Execution: 
+                  IsolationMode: GreengrassContainer
+                ResourceAccessPolicies: 
+                  - ResourceId: videoCoreSharedMemoryId
+                    Permission: ro
+                  - ResourceId: videoCoreInterfaceId
+                    Permission: ro
+                Variables: 
+                    MXNET_ENGINE_TYPE: NaiveEngine              
   greenGrassMXNetGroup:
     Type: AWS::Greengrass::Group
     Properties: 
-      Name: GreenGrassMXNetGroup
-      DependsOn: imageFunctions
+      Name: !Sub GreenGrassMXNetGroup-${AWS::StackName}
       InitialVersion:
-        FunctionDefinitionVersionArn: !GetAtt imageFunctions.Outputs.FunctionArn
+        FunctionDefinitionVersionArn: !GetAtt imageGGFunctionDefinition.LatestVersionArn
+        ResourceDefinitionVersionArn: !GetAtt videoCoreResourceDefinition.LatestVersionArn
+Outputs:
+  imageGGFunctionDefinitionArn:
+    Value: !GetAtt imageGGFunctionDefinition.Arn
+    Description: imageGGFunctionDefinition ARN
