@@ -3,14 +3,14 @@ Transform: AWS::Serverless-2016-10-31
 Description: >-
   GreenGrass Image Classification
 Resources:          
-  ResourceDefinition:
+  resourceDefinition:
     Type: AWS::Greengrass::ResourceDefinition
     Properties:
-      Name: ResourceDefinition
-  FunctionDefinition:
-    Type: 'AWS::Greengrass::FunctionDefinition'
+      Name: resourceDefinition
+  functionDefinition:
+    Type: AWS::Greengrass::FunctionDefinition
     Properties:
-      Name: FunctionDefinition
+      Name: functionDefinition
   imageFunctionsStack:
     Type: AWS::Serverless::Application
     Properties:
@@ -21,27 +21,16 @@ Resources:
       Location: https://s3.amazonaws.com/cloudformation-stacks-us-east-1/aws-greengrass-mxnet-inception/greengrass-definitions-rpi.sam.yaml
       Parameters:
         FunctionAliasArnParam: !GetAtt imageFunctionsStack.Outputs.FunctionAlias
-        ResourceReferenceParam: !Ref ResourceDefinition
-        FunctionReferenceParam: !Ref FunctionDefinition
-  # greenGrassMXNetGroup:
-  #   Type: AWS::Greengrass::Group
-  #   Properties: 
-  #     Name: !Sub GreenGrassMXNetGroup-${AWS::StackName}
-  #     InitialVersion:
-  #       FunctionDefinitionVersionArn: !GetAtt groupDefinitionsStack.Outputs.rpiImageClassicationFunctionVersion
-  #       ResourceDefinitionVersionArn: !GetAtt groupDefinitionsStack.Outputs.rpiVideoInterfaceResourceDefinitionVersion
-# Outputs:
-#   CommandToDeployGroup:
-#     Value: !Join 
-#       - ' '
-#       - - groupVersion=$(cut -d'/' -f6 <<<
-#         - !GetAtt 
-#           - greenGrassMXNetGroup
-#           - LatestVersionArn
-#         - );
-#         - aws --region
-#         - !Ref 'AWS::Region'
-#         - greengrass create-deployment --group-id
-#         - !Ref greenGrassMXNetGroup
-#         - '--deployment-type NewDeployment --group-version-id'
-#         - $groupVersion
+        ResourceReferenceParam: !Ref resourceDefinition
+        FunctionReferenceParam: !Ref functionDefinition
+  greenGrassMXNetGroup:
+    Type: AWS::Greengrass::Group
+    Properties: 
+      Name: !Sub GreenGrassMXNetGroup-${AWS::StackName}
+      InitialVersion:
+        FunctionDefinitionVersionArn: !GetAtt groupDefinitionsStack.Outputs.functionVersionArn
+        ResourceDefinitionVersionArn: !GetAtt groupDefinitionsStack.Outputs.resourceVersionArn
+Outputs:
+  GreengrassGroupID:
+    Value: !Ref greenGrassMXNetGroup
+    Description: Greengrass Group ID

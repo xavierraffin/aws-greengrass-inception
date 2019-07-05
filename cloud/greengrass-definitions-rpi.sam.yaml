@@ -5,9 +5,9 @@ Description: >-
 Parameters: 
   FunctionAliasArnParam: 
     Type: String
-  ResourceReferenceParam:
+  ResourceReferenceParam: 
     Type: String
-  FunctionReferenceParam:
+  FunctionReferenceParam: 
     Type: String
 Resources:
   rpiVideoInterfaceResourceDefinitionVersion:
@@ -29,7 +29,7 @@ Resources:
               GroupOwnerSetting: 
                 AutoAddGroupOwner: True
               SourcePath: /dev/vchiq     
-  rpiImageClassicationFunctionVersion:
+  rpiImageClassicationFunctionDefinitionVersion:
     Type: AWS::Greengrass::FunctionDefinitionVersion
     Properties: 
       FunctionDefinitionId: !Ref FunctionReferenceParam
@@ -52,11 +52,11 @@ Resources:
                 - ResourceId: videoCoreInterfaceId
                   Permission: ro
               Variables: 
-                  MXNET_ENGINE_TYPE: NaiveEngine                            
+                  MXNET_ENGINE_TYPE: NaiveEngine
 Outputs:
-    rpiImageClassicationFunctionVersion:
-      Value: !Ref rpiImageClassicationFunctionVersion
-      Description: RPi Image Classification Function Reference
-    rpiVideoInterfaceResourceDefinitionVersion:
-      Value: !Ref rpiVideoInterfaceResourceDefinitionVersion
-      Description: RPi Video Interface Reference
+  resourceVersionArn:
+    Value: !Ref rpiVideoInterfaceResourceDefinitionVersion
+    Description: Resource logical ARN
+  functionVersionArn:
+    Value: !Ref rpiImageClassicationFunctionDefinitionVersion
+    Description: Function logical ARN    
