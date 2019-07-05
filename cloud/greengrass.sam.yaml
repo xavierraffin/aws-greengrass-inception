@@ -3,40 +3,54 @@ Transform: AWS::Serverless-2016-10-31
 Description: >-
   GreenGrass Image Classification
 Resources:
-  videoCoreResourceDefinition:
+  resourceDefinition:
     Type: AWS::Greengrass::ResourceDefinition
     Properties: 
-      Name: videoCoreSharedMemoryResourceDefinition
-      InitialVersion: 
-        Resources: 
-          - Id: videoCoreSharedMemoryId
-            Name: videoCoreSharedMemory
-            ResourceDataContainer: 
-              LocalDeviceResourceData: 
-                GroupOwnerSetting: 
-                  AutoAddGroupOwner: True
-                SourcePath: /dev/vcsm                  
-          - Id: videoCoreInterfaceId
-            Name: videoCoreInterface
-            ResourceDataContainer: 
-              LocalDeviceResourceData: 
-                GroupOwnerSetting: 
-                  AutoAddGroupOwner: True
-                SourcePath: /dev/vchiq                 
+      Name: resourceDefinition
+  videoCoreResourceDefinitionVersion:
+    Type: AWS::Greengrass::ResourceDefinitionVersion
+    Properties: 
+      ResourceDefinitionId: !Ref resourceDefinition
+      Resources: 
+        - Id: videoCoreSharedMemoryId
+          Name: videoCoreSharedMemory
+          ResourceDataContainer: 
+            LocalDeviceResourceData: 
+              GroupOwnerSetting: 
+                AutoAddGroupOwner: True
+              SourcePath: /dev/vcsm                  
+        - Id: videoCoreInterfaceId
+          Name: videoCoreInterface
+          ResourceDataContainer: 
+            LocalDeviceResourceData: 
+              GroupOwnerSetting: 
+                AutoAddGroupOwner: True
+              SourcePath: /dev/vchiq   
+  tempPathResourceDefinitionVersion:
+    Type: AWS::Greengrass::ResourceDefinitionVersion
+    Properties: 
+      ResourceDefinitionId: !Ref resourceDefinition
+      Resources: 
+        - Id: tempPathId  
+          Name: tempPath
+          ResourceDataContainer: 
+            LocalVolumeResourceData: 
+              GroupOwnerSetting: 
+                AutoAddGroupOwner: True
+              SourcePath: /tmp        
+              DestinationPath: /tmp                                  
   imageFunctions:
     Type: AWS::Serverless::Application
     Properties:
       Location: https://s3.amazonaws.com/cloudformation-stacks-us-east-1/aws-greengrass-mxnet-inception/image-classification-lambda.sam.yaml
-      # Parameters:
-      #   StackName: !Sub ${AWS::StackName}
   imageGGFunctionDefinition:
     Type: AWS::Greengrass::FunctionDefinition
     Properties: 
-      Name: ImageClassificationFunctionDefinition        
+      Name: functionDefinition        
       InitialVersion: 
         Functions:
           - 
-            Id: ImageClassification
+            Id: ImageClassificationFunction
             FunctionArn: !GetAtt imageFunctions.Outputs.FunctionAlias
             FunctionConfiguration:
               Pinned: True
@@ -57,11 +71,11 @@ Resources:
   greenGrassMXNetGroup:
     Type: AWS::Greengrass::Group
     Properties: 
-      Name: !Sub GreenGrassMXNetGroup-${AWS::StackName}
+      Name: GreenGrassMXNetGroup
       InitialVersion:
         FunctionDefinitionVersionArn: !GetAtt imageGGFunctionDefinition.LatestVersionArn
-        ResourceDefinitionVersionArn: !GetAtt videoCoreResourceDefinition.LatestVersionArn
+        ResourceDefinitionVersionArn: !GetAtt resourceDefinition.LatestVersionArn
 Outputs:
-  imageGGFunctionDefinitionArn:
-    Value: !GetAtt imageGGFunctionDefinition.Arn
-    Description: imageGGFunctionDefinition ARN
+  GreengrassGroupID:
+    Value: !Ref greenGrassMXNetGroup
+    Description: Greengrass Group ID
