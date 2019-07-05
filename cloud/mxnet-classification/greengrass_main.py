@@ -37,7 +37,7 @@ def greengrass_long_run():
             print("Exception occured during prediction: %s" % e)
             
     # Asynchronously schedule this function to be run again in 5 seconds
-    Timer(5, greengrass_hello_world_run).start()
+    Timer(5, greengrass_long_run).start()
 
 
 # Execute the function above
