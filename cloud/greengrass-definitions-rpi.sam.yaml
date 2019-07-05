@@ -58,7 +58,7 @@ Resources:
                 - ResourceId: videoCoreSharedMemoryId
                   Permission: ro
                 - ResourceId: videoCoreInterfaceId
-                  Permission: ro
+                  Permission: rw
                 - ResourceId: mlModelId
                   Permission: ro
               Variables: 
