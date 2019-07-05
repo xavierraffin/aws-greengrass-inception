@@ -9,6 +9,8 @@ Parameters:
     Type: String
   FunctionReferenceParam: 
     Type: String
+  ModelS3UriParam:
+    Type: String
 Resources:
   rpiVideoInterfaceResourceDefinitionVersion:
     Type: AWS::Greengrass::ResourceDefinitionVersion
@@ -29,6 +31,12 @@ Resources:
               GroupOwnerSetting: 
                 AutoAddGroupOwner: True
               SourcePath: /dev/vchiq     
+        - Id: mlModelId
+          Name: mlModelmxnetInception
+          ResourceDataContainer:
+            S3MachineLearningModelResourceData: 
+              DestinationPath: /greengrass-machine-learning/mxnet/inception_bn
+              S3Uri: !Ref ModelS3UriParam                    
   rpiImageClassicationFunctionDefinitionVersion:
     Type: AWS::Greengrass::FunctionDefinitionVersion
     Properties: 
@@ -50,6 +58,8 @@ Resources:
                 - ResourceId: videoCoreSharedMemoryId
                   Permission: ro
                 - ResourceId: videoCoreInterfaceId
+                  Permission: ro
+                - ResourceId: mlModelId
                   Permission: ro
               Variables: 
                   MXNET_ENGINE_TYPE: NaiveEngine

@@ -23,6 +23,7 @@ Resources:
         FunctionAliasArnParam: !GetAtt imageFunctionsStack.Outputs.FunctionAlias
         ResourceReferenceParam: !Ref resourceDefinition
         FunctionReferenceParam: !Ref functionDefinition
+        ModelS3UriParam: https://cloudformation-stacks-us-east-1.s3.amazonaws.com/aws-greengrass-mxnet-inception/inception_bn.zip
   greenGrassMXNetGroup:
     Type: AWS::Greengrass::Group
     Properties: 
