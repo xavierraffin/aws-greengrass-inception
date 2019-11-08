@@ -1,0 +1,158 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: Jupyter notebook on EC2
+
+Parameters:
+  Ec2KeyPair: 
+    Description: Amazon EC2 Key Pair
+    Type: "AWS::EC2::KeyPair::KeyName"
+  JupyterPassword: 
+    NoEcho: true
+    Description: The Jupyter password, minimum 8 characters or numbers
+    Type: String
+    MinLength: 12
+    MaxLength: 41
+    AllowedPattern: ^[a-zA-Z0-9]*$
+Mappings: 
+  RegionMap: 
+    us-east-1: 
+      HVM64: "ami-00dc79254d0461090"
+    us-west-1: 
+      HVM64: "ami-024c80694b5b3e51a"
+    eu-west-1: 
+      HVM64: "ami-040ba9174949f6de4"
+    ap-southeast-1: 
+      HVM64: "ami-00942d7cd4f3ca5c0"
+    ap-northeast-1: 
+      HVM64: "ami-0064e711cbc7a825e"
+Resources: 
+  PublicVPC:
+    Type: 'AWS::EC2::VPC'
+    Properties:
+      CidrBlock: 10.10.0.0/16
+  PublicSubnet:
+    Type: 'AWS::EC2::Subnet'
+    Properties:
+      VpcId: !Ref PublicVPC
+      CidrBlock: 10.10.10.0/24
+      MapPublicIpOnLaunch: true      
+  InternetGateway:
+    Type: 'AWS::EC2::InternetGateway'
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Join [_, [!Ref 'AWS::StackName']]
+        - Key: Network
+          Value: Public      
+  GatewayToInternet:
+    Type: 'AWS::EC2::VPCGatewayAttachment'
+    Properties:
+      VpcId: !Ref PublicVPC
+      InternetGatewayId: !Ref InternetGateway          
+  PublicRouteTable:
+    Type: 'AWS::EC2::RouteTable'
+    Properties:
+      VpcId: !Ref PublicVPC
+      Tags:
+        - Key: Network
+          Value: Public      
+  PublicRoute:
+    Type: 'AWS::EC2::Route'
+    DependsOn: GatewayToInternet
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway      
+  PublicSubnet1RouteTableAssociation:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    Properties:
+      SubnetId: !Ref PublicSubnet
+      RouteTableId: !Ref PublicRouteTable   
+  InstanceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: SSH and Notebook
+      VpcId: !Ref PublicVPC
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: 22
+        ToPort: 22
+        CidrIp: '0.0.0.0/0'             
+      - IpProtocol: tcp
+        FromPort: 443
+        ToPort: 443
+        CidrIp: '0.0.0.0/0'       
+  Ec2InstanceRole:
+    Type: "AWS::IAM::Role"
+    Properties: 
+      RoleName: !Sub Ec2InstanceRole-${AWS::StackName}
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - "ec2.amazonaws.com"
+            Action: 
+              - "sts:AssumeRole"
+      Path: /
+      Policies:
+        - PolicyName: root
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action: '*'
+                Resource: '*'          
+  Ec2InstanceProfile:
+    Type: "AWS::IAM::InstanceProfile"
+    Properties:
+      InstanceProfileName: !Sub Ec2InstanceProfile-${AWS::StackName}
+      Path: /
+      Roles: 
+        - !Ref Ec2InstanceRole
+  Ec2WaitCondition:
+    Type: AWS::CloudFormation::WaitCondition
+    CreationPolicy:
+      ResourceSignal:
+        Count: 1
+        Timeout: "PT10M"
+  EC2Instance: 
+    Type: "AWS::EC2::Instance"
+    Properties: 
+      ImageId: !FindInMap
+        - RegionMap
+        - !Ref 'AWS::Region'
+        - HVM64
+      InstanceType: t2.micro
+      KeyName: !Ref Ec2KeyPair
+      NetworkInterfaces: 
+        - AssociatePublicIpAddress: "true"
+          DeviceIndex: "0"
+          GroupSet: 
+            - !Ref "InstanceSecurityGroup"
+          SubnetId: 
+            !Ref "PublicSubnet"      
+      IamInstanceProfile: !Ref Ec2InstanceProfile
+      Tags:
+        - 
+          Key: Name
+          Value: !Sub Jupyter-Notebook-${AWS::StackName}
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash -xe
+          yum update -y
+          amazon-linux-extras install docker -y
+          service docker start
+          usermod -a -G docker ec2-user
+          yum install git -y
+          git clone https://github.com/kangks/docker-stacks.git
+          cd docker-stacks/jupyter-notebook/minimal-password
+          docker image build -t jupyter-password:1.0 .
+          docker run -d -e GEN_CERT=yes -e PASSWORD=${JupyterPassword} -e JUPYTER_ENABLE_LAB=yes -p 443:8443 jupyter-password:1.0
+          yum update -y aws-cfn-bootstrap
+          /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource Ec2WaitCondition --region ${AWS::Region}            
+Outputs:
+  PublicIp:
+    Value: !Sub "https://${EC2Instance.PublicIp}/"
+    Description: Ec2 public IP
