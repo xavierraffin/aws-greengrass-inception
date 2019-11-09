@@ -1,0 +1,3 @@
+[submodule "cfn/aws-iot-greengrass-accelerators"]
+	path = cfn/aws-iot-greengrass-accelerators
+	url = https://github.com/awslabs/aws-iot-greengrass-accelerators.git
