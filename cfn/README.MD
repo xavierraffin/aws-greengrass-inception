@@ -2,12 +2,16 @@
 
 This is a guided demo on how to run Machine Learning Inference at Edge with AWS IoT Greengrass.
 
-The notebook [GreengrassConfig.ipynb](GreengrassConfig.ipynb) contains the steps, and it will create 2 stacks as follows:
+The Jupyter notebook [GreengrassConfig.ipynb](GreengrassConfig.ipynb) contains the steps, and it will create 2 stacks as follows:
 
 * Stack 1 - Creates AWS IoT Thing and Greengrass core
 * Stack 2 - Creates an AWS EC2 with Greengrass software
 
 ## Step 1 - Create an AWS EC2 with Jupyter Notebook
+
+Use one of the Cloudformation templates below to spin up an EC2 with Jupyter. You need to enter a password to access the notebook, minimum length of the password is 12, and allows only letters and numbers.
+
+Once the stack is `CREATE_COMPLETE`, access the notebook from the URL which can be found in the `Outputs` of the stack.
 
 |AWS Region|Region|CloudFormation|
 |-|-|-|
@@ -26,9 +30,12 @@ The notebook [GreengrassConfig.ipynb](GreengrassConfig.ipynb) contains the steps
 
 ## Step 2 - Clone this repository
 
-1. Create a new Python 3 notebook
+1. In the `Launcher` tab, click on `Python 3` Jupyter notebook to create a new notebook
 2. In the empty cell, enter the following command to clone this repository along with the sub modules
-
 ```
 !git clone --recursive https://github.com/kangks/aws-greengrass-mxnet-inception.git
 ```
+3. From the menu at the top, select `Run`, `Run Selected Cells`
+4. This repository should be available in the `File Browser` at the left. Click on the folder `aws-greengrass-mxnet-inception/cfn/`
+5. Open the Jupyter notebook `GreengrassConfig.ipynb`
+6. Follow the steps in the `GreengrassConfig.ipynb`
