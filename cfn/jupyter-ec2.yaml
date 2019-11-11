@@ -8,7 +8,7 @@ Parameters:
     Type: "AWS::EC2::KeyPair::KeyName"
   JupyterPassword: 
     NoEcho: true
-    Description: The Jupyter password, minimum 8 characters or numbers
+    Description: The Jupyter password consists of letters and/or numbers. Minimum length is 12 
     Type: String
     MinLength: 12
     MaxLength: 41
