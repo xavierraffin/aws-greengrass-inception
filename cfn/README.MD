@@ -1,4 +1,5 @@
 ## IoT 317 - LEARN THE ESSENTIALS OF ML INFERENCE WITH AWS IOT GREENGRASS
+(Shortened URL - https://bit.ly/2L4LENm)
 
 This is a guided demo on how to run Machine Learning Inference at Edge with AWS IoT Greengrass.
 
