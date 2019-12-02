@@ -1,4 +1,4 @@
-## Uses Jupyter Notebook to Cloudformation stacks for demo of Inference @ Edge using Greengrass
+## IoT 317 - LEARN THE ESSENTIALS OF ML INFERENCE WITH AWS IOT GREENGRASS
 
 This is a guided demo on how to run Machine Learning Inference at Edge with AWS IoT Greengrass.
 
