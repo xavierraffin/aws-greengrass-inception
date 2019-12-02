@@ -6,6 +6,7 @@ The Jupyter notebook [GreengrassConfig.ipynb](GreengrassConfig.ipynb) contains t
 
 * Stack 1 - Creates AWS IoT Thing and Greengrass core
 * Stack 2 - Creates an AWS EC2 with Greengrass software
+  * In the interest of time, it is recommended to create the EC2 with Greengrass Core Software using the template in https://bit.ly/33KEQdX 
 
 ## Step 1 - Create an AWS EC2 with Jupyter Notebook
 
