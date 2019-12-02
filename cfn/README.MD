@@ -37,6 +37,7 @@ Once the stack is `CREATE_COMPLETE`, access the notebook from the URL which can 
 ```
 !git clone --recursive https://github.com/kangks/aws-greengrass-mxnet-inception.git
 ```
+   * Take note of the `--recursive` because we will be including the AWS IoT Accelerator repository
 3. From the menu at the top, select `Run`, `Run Selected Cells`
 4. This repository should be available in the `File Browser` at the left. Click on the folder `aws-greengrass-mxnet-inception/cfn/`
 5. Open the Jupyter notebook `GreengrassConfig.ipynb`
