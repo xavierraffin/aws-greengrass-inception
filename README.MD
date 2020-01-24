@@ -2,7 +2,6 @@
 
 ML@Edge Image Classifications example using MXNet pretrained model with GreenGrass Core running on a Rasperry Pi
 
-
 ## Description
 
 This is an example of running Lambda on GreenGrass with MXNet pretrained model Inception v3 for image classification
